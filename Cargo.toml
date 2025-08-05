@@ -1,0 +1,16 @@
+[package]
+name = "Musettir"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+image = "0.25.5"
+relm4 = "0.5.1"
+relm4-components = "0.5.1"
+mime_guess = "2.0" # Added dependency
+
+[[bin]]
+name = "musettir"
+path = "src/main.rs"
