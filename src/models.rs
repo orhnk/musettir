@@ -7,6 +7,7 @@ pub struct Rectangle {
     pub y: f64,
     pub width: f64,
     pub height: f64,
+    pub color: (f64, f64, f64), // RGB color
 }
 
 #[derive(Clone)]
@@ -16,6 +17,7 @@ pub struct Model {
     pub rectangles: Vec<Rectangle>,
     pub drawing_rectangle: Option<Rectangle>,
     pub is_drawing: bool,
+    pub current_color: (f64, f64, f64), // Current drawing color
 }
 
 impl Model {
@@ -26,6 +28,7 @@ impl Model {
             rectangles: Vec::new(),
             drawing_rectangle: None,
             is_drawing: false,
+            current_color: (1.0, 0.0, 0.0), // Default to red
         }
     }
 
@@ -39,7 +42,13 @@ impl Model {
 
     pub fn start_drawing(&mut self, x: f64, y: f64) {
         self.is_drawing = true;
-        self.drawing_rectangle = Some(Rectangle { x, y, width: 0.0, height: 0.0 });
+        self.drawing_rectangle = Some(Rectangle { 
+            x, 
+            y, 
+            width: 0.0, 
+            height: 0.0,
+            color: self.current_color,
+        });
     }
 
     pub fn update_drawing(&mut self, x: f64, y: f64) {
@@ -56,5 +65,9 @@ impl Model {
             }
         }
         self.is_drawing = false;
+    }
+
+    pub fn set_color(&mut self, color: (f64, f64, f64)) {
+        self.current_color = color;
     }
 }

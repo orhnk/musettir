@@ -3,7 +3,7 @@ use gtk::prelude::*;
 use gtk::{
     Button, Window, WindowType, Box as GtkBox, Orientation,
     Inhibit, Align, FileChooserDialog, FileChooserAction, ResponseType,
-    DrawingArea, ScrolledWindow, PolicyType,
+    DrawingArea, ScrolledWindow, PolicyType, ColorButton,
 };
 use gtk::gdk_pixbuf::{Pixbuf, InterpType};
 use gtk::gdk::EventMask;
@@ -104,6 +104,10 @@ impl Update for Win {
                 *self.model_for_draw.borrow_mut() = self.model.clone();
                 self.widgets.drawing_area.queue_draw();
             }
+            Msg::ColorChanged(r, g, b) => {
+                self.model.set_color((r, g, b));
+                *self.model_for_draw.borrow_mut() = self.model.clone();
+            }
             Msg::Quit => gtk::main_quit(),
         }
     }
@@ -127,9 +131,21 @@ impl Widget for Win {
         main_box.set_margin_top(10);
         main_box.set_margin_bottom(10);
 
+        // Create button box for controls
+        let button_box = GtkBox::new(Orientation::Horizontal, 10);
+        button_box.set_halign(Align::Center);
+
         let open_button = Button::with_label("Open Image");
-        open_button.set_halign(Align::Center);
-        main_box.pack_start(&open_button, false, false, 5);
+        button_box.pack_start(&open_button, false, false, 0);
+
+        // Create color button
+        let color_button = ColorButton::new();
+        color_button.set_title("Select Rectangle Color");
+        let default_color = gtk::gdk::RGBA::new(1.0, 0.0, 0.0, 1.0);
+        color_button.set_rgba(&default_color);
+        button_box.pack_start(&color_button, false, false, 0);
+
+        main_box.pack_start(&button_box, false, false, 5);
 
         let scrolled_window = ScrolledWindow::new(None::<&gtk::Adjustment>, None::<&gtk::Adjustment>);
         scrolled_window.set_policy(PolicyType::Automatic, PolicyType::Automatic);
@@ -187,6 +203,15 @@ impl Widget for Win {
         window.add(&main_box);
 
         connect!(relm, open_button, connect_clicked(_), Msg::OpenFile);
+        
+        // Create clones before the connect! macro to avoid borrowing issues
+        let color_button_for_connect = color_button.clone();
+        let color_button_for_closure = color_button.clone();
+        connect!(relm, color_button_for_connect, connect_color_set(_), {
+            let rgba = color_button_for_closure.rgba();
+            Msg::ColorChanged(rgba.red(), rgba.green(), rgba.blue())
+        });
+        
         connect!(relm, window, connect_delete_event(_, _), return (Some(Msg::Quit), Inhibit(false)));
 
         window.show_all();
@@ -196,9 +221,11 @@ impl Widget for Win {
             widgets: Widgets {
                 window,
                 open_button,
+                color_button,
                 drawing_area,
                 scrolled_window,
                 main_box,
+                button_box,
             },
             model_for_draw,
         }
@@ -216,21 +243,19 @@ fn draw_content(ctx: &Context, model: &Model) {
         ctx.paint().unwrap();
     }
 
-    // Draw completed rectangles
-    ctx.set_source_rgb(1.0, 0.0, 0.0); // Solid red color
+    // Draw completed rectangles with their individual colors
     ctx.set_line_width(3.0);
     
     for rect in &model.rectangles {
+        ctx.set_source_rgb(rect.color.0, rect.color.1, rect.color.2);
         ctx.rectangle(rect.x, rect.y, rect.width, rect.height);
         ctx.stroke_preserve().unwrap();
-        ctx.set_source_rgb(1.0, 0.0, 0.0); // Solid red fill (fully opaque)
         ctx.fill().unwrap();
-        ctx.set_source_rgb(1.0, 0.0, 0.0); // Reset to solid red for stroke
     }
 
     // Draw current drawing rectangle
     if let Some(ref rect) = model.drawing_rectangle {
-        ctx.set_source_rgb(0.0, 0.8, 0.0); // Solid green color for current drawing
+        ctx.set_source_rgb(rect.color.0, rect.color.1, rect.color.2);
         ctx.set_line_width(2.0);
         ctx.rectangle(rect.x, rect.y, rect.width, rect.height);
         ctx.stroke().unwrap();
