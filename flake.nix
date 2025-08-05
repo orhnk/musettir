@@ -43,8 +43,9 @@
 
           # The Nix packages provided in the environment
           packages = (with pkgs; [
-            gtk4
-            libadwaita
+            gtk3
+            glib
+            graphene
             pkg-config
             
             # The package provided by our custom overlay. Includes cargo, Clippy, cargo-fmt,
@@ -67,8 +68,9 @@
           ]);
 
           buildInputs = (with pkgs; [
-            gtk4
-            libadwaita
+            gtk3
+            glib
+            graphene
           ]);
         };
       });
