@@ -1,7 +1,11 @@
-use relm_derive::Msg;
+use std::path::PathBuf;
 
-#[derive(Msg)]
+#[derive(Clone, relm_derive::Msg)]
 pub enum Msg {
     OpenFile,
+    LoadImage(PathBuf),
+    StartDrawing(f64, f64),
+    UpdateDrawing(f64, f64),
+    FinishDrawing,
     Quit,
 }
